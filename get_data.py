@@ -30,8 +30,20 @@ df['MACD'], df['MACD_Signal'] = calculate_macd(df['Close'])
 
 df['Normalised_Volume'] = (df['Volume'] - df['Volume'].rolling(window=20).mean()) / df['Volume'].rolling(window=20).std()
 
-df['Momentum'] = df['Close'].diff(10)
+df['Momentum'] = df['Close'].pct_change(10)
 
 df = df.dropna()
+
+# check for infinite values
+if df.isin([np.inf, -np.inf]).any().any():
+    print("Warning: Infinite values detected, replacing with NaN")
+    df = df.replace([np.inf, -np.inf], np.nan)
+    df = df.dropna()
+
+# check reasonable ranges
+if (df['RSI'] < 0).any() or (df['RSI'] > 100).any():
+    print("Warning: RSI values outside [0, 100] range")
+if abs(df['Normalised_Volume']).max() > 10:
+    print(f"Warning: Normalized volume has extreme values (max abs: {abs(df['Normalised_Volume']).max():.2f})")
 
 df.to_csv('sp500_data.csv')
